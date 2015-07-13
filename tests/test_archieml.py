@@ -13,12 +13,12 @@ class TestArchieML(unittest.TestCase):
 			print filename
 			slug, i = os.path.basename(filename).split('.')[:2]
 			with open(filename) as f:
-				metadata = archieml.load_file(f)
+				metadata = archieml.load(f)
 				test = metadata['test']
 				expected = json.loads(metadata['result'])
 
 			with open(filename) as f:
-				actual = archieml.load_file(f)
+				actual = archieml.load(f)
 				del actual['test']
 				del actual['result']
 			self.assertEqual(json.dumps(expected), json.dumps(actual), """{slug}.{i} {test}
