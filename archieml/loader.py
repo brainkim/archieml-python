@@ -11,38 +11,21 @@ class Scope(object):
 		self.scope_type = scope_type if scope_type is not None else self.OBJECT
 
 class Loader(object):
-	NEXT_LINE     = re.compile(r'.*((\r|\n)+)')
 	START_KEY	  = re.compile(r'^\s*(?P<key>[A-Za-z0-9\-_\.]+)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
 	COMMAND_KEY   = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(\n|\r|$)', re.IGNORECASE)
 	ARRAY_ELEMENT = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
 	SCOPE_PATTERN = re.compile(r'^\s*(?P<delimiter>\[|\{)[ \t\r]*(?P<flags>[\+\.]*)(?P<key>[A-Za-z0-9\-_\.]*)[ \t\r]*(?:\]|\}).*?(\n|\r|$)')
+	NEXT_LINE     = re.compile(r'.*((\r|\n)+)')
 
 	def __init__(self, **options):
-		# self.data is the data that can be returned at any moment during parsing. self.scope is an alias of self.data or nested list/dict
-		# in self.data which represents what the item being mutated during parsing.
-		self.data = self.scope = {}
-
-		# the stack is used to keep track of list parsing and is composed of plain old dicts with the following keys:
-		# `array` (the list being mutated)
-		# `array_type` (simple | complex)
-		# `first_key` (the first key seen in the document, which starts a new element, or is None if the list is simple
-		# `scope` (the scope of the array)
+		self.result = {}
 		self.stack = []
-		self.stack_scope = None
-
-		# the buffer is used to store multi-line strings in the event that an :end command is found.
-		self.buffer_key = None
-		self.buffer_string = ''
-		self.buffer_scope = None
-
+		self.buffer = ''
 		self.is_skipping = False
-		self.done_parsing = False
-
-		self.options = dict({}, **options)
 	
 	def load(self, aml, **options):
 		options = dict(self.options, **options)
-		while aml:
+		while f:
 			if self.done_parsing:
 				break
 			elif self.COMMAND_KEY.match(aml):
