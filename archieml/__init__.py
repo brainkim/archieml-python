@@ -36,7 +36,7 @@ class Scope(object):
         self.is_freeform = '+' in flags
 
         if brace == '[':
-            if self.is_nesting:
+            if self.is_nesting and old_path is not None:
                 self.path = old_path + path + [0]
             else:
                 self.path = path + [0]
