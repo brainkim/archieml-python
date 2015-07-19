@@ -8,5 +8,5 @@ setup(
     packages=[
         'archieml',
     ],
-    test_suite = 'tests.test_archieml',
+    test_suite = 'tests'
 )

@@ -1,6 +1,5 @@
 setup.py
 archieml/__init__.py
-archieml/loader.py
 archieml.egg-info/PKG-INFO
 archieml.egg-info/SOURCES.txt
 archieml.egg-info/dependency_links.txt
