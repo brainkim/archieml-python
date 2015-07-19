@@ -30,36 +30,43 @@ def _set_in(data, path, value):
 
 class Scope(object):
     def __init__(self, key, brace='{', flags='', old_scope=None):
-        if key:
-            key_path = key.split('.')
-        else:
-            key_path = []
-
         self.brace = brace
 
         self.is_nesting  = '.' in flags
         self.is_freeform = '+' in flags
 
+        if old_scope is not None and self.is_nesting:
+            old_scope.add_key(key)
+
+        if key:
+            key_path = key.split('.')
+        else:
+            key_path = []
+
         if brace == '[':
             if self.is_nesting and old_scope is not None and old_scope.path:
-                self.path = old_scope.path + key_path + [0]
+                self.path = old_scope.path + [old_scope.index] + key_path
             else:
-                self.path = key_path + [0]
+                self.path = key_path
+            self.index = 0
+
         else:
             self.path = key_path
+            self.index = None
 
         self.first_key = None
         self.is_simple = False
 
-        if old_scope is not None:
-            if self.is_nesting and old_scope.first_key is None:
-                old_scope.first_key = key
-            elif old_scope.brace == '[' and old_scope.first_key == key:
-                old_scope.increment()
 
     def increment(self):
-        assert type(self.path[-1]) == int
-        self.path[-1] += 1
+        assert self.index is not None
+        self.index += 1
+
+    def add_key(self, key):
+        if self.first_key is None:
+            self.first_key = key
+        elif self.brace == '[' and self.first_key == key:
+            self.increment()
 
 class Loader(object):
     COMMAND_PATTERN = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(?:\n|\r|$)', re.IGNORECASE)
@@ -135,19 +142,22 @@ class Loader(object):
 
     def load_key(self, key, value):
         scope = self.current_scope
-        if scope.first_key is None:
-            scope.first_key = key
-        elif scope.brace == '[' and key == scope.first_key:
-            scope.increment()
-        path = scope.path + key.split('.')
-        _set_in(self.data, scope.path + key.split('.'), value.strip())
+        scope.add_key(key)
+
+        path = scope.path
+        if scope.brace == '[':
+            path = path + [scope.index]
+        path = path + key.split('.')
+
+        _set_in(self.data, path, value.strip())
         self.reset_buffer(path=path, value=value)
 
     def load_element(self, value):
         scope = self.current_scope
         scope.is_simple = True
-        _set_in(self.data, scope.path, value.strip())
-        self.reset_buffer(path=list(scope.path), value=value)
+        path = scope.path + [scope.index]
+        _set_in(self.data, path, value.strip())
+        self.reset_buffer(path=list(path), value=value)
         scope.increment()
 
     def push_scope(self, scope):
@@ -164,17 +174,8 @@ class Loader(object):
         else:
             old_scope = self.current_scope
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
-
-            path = scope_key.split('.')
-            if new_scope.is_nesting:
-                base_path = old_scope.path + path
-            else:
-                base_path = path
-
             initial_value = {} if brace == '{' else []
-
-            _set_in(self.data, base_path, initial_value)
-
+            _set_in(self.data, new_scope.path, initial_value)
             self.push_scope(new_scope)
 
     def load_text(self, text):
