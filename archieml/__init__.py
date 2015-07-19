@@ -20,7 +20,10 @@ def _set_in(data, path, value):
             raise TypeError("element in path which is not int or string: {}".format(path))
 
     try:
-        data[path[-1]] = value
+		if value == {} and type(data) == dict and type(data.get(path[-1])) == dict:
+			pass
+		else:
+			data[path[-1]] = value
     except IndexError:
         data.append(None)
         data[path[-1]] = value

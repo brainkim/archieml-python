@@ -20,10 +20,9 @@ class TestArchieML(unittest.TestCase):
                     actual = archieml.load(f)
                     del actual['test']
                     del actual['result']
-                self.assertEqual(json.dumps(expected), json.dumps(actual), (
+
+                self.assertEqual(expected, actual, (
                     "{slug}.{i} {test}\n"
                     "expected: {expected}\n"
-                    "actual  : {actual}").format(
-                    slug=slug, i=i, test=test,
-                    expected=expected,
-                    actual=actual))
+                    "actual  : {actual}"
+                ).format(slug=slug, i=i, test=test, expected=expected, actual=actual))
