@@ -38,6 +38,8 @@ class Scope(object):
         self.register_key(key)
         if type(key) == int:
             path = self.path + [key]
+            self.is_simple = True
+            self.increment()
         else:
             path = key.split('.')
             if self.brace == '[':
@@ -154,14 +156,12 @@ class Loader(object):
         scope = self.current_scope
 
         self.set_value(key, value.strip())
-        self.reset_buffer(key=key, value=value)
+        self.reset_buffer(key, value)
 
     def load_element(self, value):
-        scope = self.current_scope
-        scope.is_simple = True
-        self.set_value(scope.index, value.strip())
-        self.reset_buffer(key=scope.index, value=value)
-        scope.increment()
+        key = self.current_scope.index
+        self.set_value(key, value.strip())
+        self.reset_buffer(key, value)
 
     def load_scope(self, brace, flags, scope_key):
         if scope_key == '' and len(self.stack) > 1:
