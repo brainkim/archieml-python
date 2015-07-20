@@ -193,21 +193,14 @@ class Loader(object):
         self.reset_buffer(key=scope.index, value=value)
         scope.increment()
 
-    def push_scope(self, scope):
-        self.stack.append(scope)
-
-    def pop_scope(self):
-        if len(self.stack) > 1:
-            return self.stack.pop()
-
     def load_scope(self, brace, flags, scope_key):
-        if scope_key == '':
-            self.pop_scope()
+        if scope_key == '' and len(self.stack) > 1:
+            self.stack.pop()
         else:
             old_scope = self.current_scope
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             _set_in(self.data, new_scope.path, {} if brace == '{' else [])
-            self.push_scope(new_scope)
+            self.stack.append(new_scope)
         self.reset_buffer()
 
     def load_text(self, text):
