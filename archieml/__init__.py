@@ -62,6 +62,9 @@ class Scope(object):
         assert self.index is not None
         self.index += 1
 
+    def resolve_key(self, key):
+        pass
+
     def add_key(self, key):
         if self.first_key is None:
             self.first_key = key
@@ -92,6 +95,42 @@ class Loader(object):
     @property
     def current_scope(self):
         return self.stack[-1]
+    
+    def set_value(self, key, value):
+        data  = self.data
+        scope = self.current_scope
+
+        if type(key) == int:
+            path = scope.path + [key]
+        else:
+            path = key.split('.')
+            if scope.brace == '[':
+                path = scope.path + [scope.index] + path
+            else:
+                path = scope.path + path
+
+        for k in path[:-1]:
+            if type(k) == int:
+                try:
+                    data = data[k]
+                except IndexError:
+                    data.append({})
+                    data = data[k]
+            elif type(k) == str or type(k) == unicode:
+                if k not in data or type(data[k]) == str:
+                    data[k] = {}
+                data = data[k]
+            else:
+                raise TypeError("element in path which is not int or string: {}".format(path))
+
+        try:
+            if value == {} and type(data) == dict and type(data.get(path[-1])) == dict:
+                pass
+            else:
+                data[path[-1]] = value
+        except IndexError:
+            data.append(None)
+            data[path[-1]] = value
 
     def load(self, f, **options):
         for line in f:
@@ -131,17 +170,7 @@ class Loader(object):
         if self.is_skipping and not (command == 'endskip' or command == 'ignore'):
             pass
         elif command == 'end' and self.buffer_key is not None and self.buffer_value:
-            scope = self.current_scope
-            if type(self.buffer_key) == int:
-                path = scope.path + [self.buffer_key]
-            else:
-                path = self.buffer_key.split('.')
-                if scope.brace == '[':
-                    path = scope.path + [scope.index] + path
-                else:
-                    path = scope.path + path
-
-            _set_in(self.data, path, self.buffer_value.strip())
+            self.set_value(self.buffer_key, self.buffer_value.strip())
         elif command == 'ignore':
             self.done_parsing = True
         elif command == 'skip':
@@ -154,19 +183,13 @@ class Loader(object):
         scope = self.current_scope
         scope.add_key(key)
 
-        path = scope.path
-        if scope.brace == '[':
-            path = path + [scope.index]
-        path = path + key.split('.')
-
-        _set_in(self.data, path, value.strip())
+        self.set_value(key, value.strip())
         self.reset_buffer(key=key, value=value)
 
     def load_element(self, value):
         scope = self.current_scope
         scope.is_simple = True
-        path = scope.path + [scope.index]
-        _set_in(self.data, path, value.strip())
+        self.set_value(scope.index, value.strip())
         self.reset_buffer(key=scope.index, value=value)
         scope.increment()
 
@@ -183,8 +206,7 @@ class Loader(object):
         else:
             old_scope = self.current_scope
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
-            initial_value = {} if brace == '{' else []
-            _set_in(self.data, new_scope.path, initial_value)
+            _set_in(self.data, new_scope.path, {} if brace == '{' else [])
             self.push_scope(new_scope)
         self.reset_buffer()
 
