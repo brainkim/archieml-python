@@ -54,13 +54,13 @@ class Loader(object):
     ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[A-Za-z0-9\-_]*(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
 
-    initial_scope = Scope()
 
     def __init__(self, **options):
         self.data = {}
 
         self.reset_buffer()
 
+        self.initial_scope = Scope()
         self.stack = [self.initial_scope]
 
         self.is_skipping  = False
