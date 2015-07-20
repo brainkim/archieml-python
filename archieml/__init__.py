@@ -43,7 +43,7 @@ class Scope(object):
             self.register_key(key)
             path = key.split('.')
             if self.brace == '[':
-                path = self.path + [scope.index] + path
+                path = self.path + [self.index] + path
             else:
                 path = self.path + path
         return path
