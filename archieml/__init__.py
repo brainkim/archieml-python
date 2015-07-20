@@ -1,41 +1,14 @@
 import re
 from StringIO import StringIO
 
-def _set_in(data, path, value):
-    assert type(path) == list and len(path) > 0
-
-    data = data
-    for k in path[:-1]:
-        if type(k) == int:
-            try:
-                data = data[k]
-            except IndexError:
-                data.append({})
-                data = data[k]
-        elif type(k) == str or type(k) == unicode:
-            if k not in data or type(data[k]) == str:
-                data[k] = {}
-            data = data[k]
-        else:
-            raise TypeError("element in path which is not int or string: {}".format(path))
-
-    try:
-        if value == {} and type(data) == dict and type(data.get(path[-1])) == dict:
-            pass
-        else:
-            data[path[-1]] = value
-    except IndexError:
-        data.append(None)
-        data[path[-1]] = value
-
 class Scope(object):
     def __init__(self, key, brace='{', flags='', old_scope=None):
         self.brace = brace
 
-        self.is_nesting  = '.' in flags
+        self.is_nested = '.' in flags
         self.is_freeform = '+' in flags
 
-        if old_scope is not None and self.is_nesting:
+        if old_scope is not None and self.is_nested:
             old_scope.add_key(key)
 
         if key:
@@ -44,7 +17,7 @@ class Scope(object):
             key_path = []
 
         if brace == '[':
-            if self.is_nesting and old_scope is not None and old_scope.path:
+            if self.is_nested and old_scope is not None and old_scope.path:
                 self.path = old_scope.path + [old_scope.index] + key_path
             else:
                 self.path = key_path
@@ -96,18 +69,24 @@ class Loader(object):
     def current_scope(self):
         return self.stack[-1]
     
-    def set_value(self, key, value):
+    def set_value(self, key, value, use_scope=True):
         data  = self.data
-        scope = self.current_scope
 
-        if type(key) == int:
-            path = scope.path + [key]
-        else:
-            path = key.split('.')
-            if scope.brace == '[':
-                path = scope.path + [scope.index] + path
+        if use_scope:
+            scope = self.current_scope
+            if type(key) == int:
+                path = scope.path + [key]
             else:
-                path = scope.path + path
+                path = key.split('.')
+                if scope.brace == '[':
+                    path = scope.path + [scope.index] + path
+                else:
+                    path = scope.path + path
+        else:
+            if type(key) == int:
+                path = [key]
+            else:
+                path = key.split('.')
 
         for k in path[:-1]:
             if type(k) == int:
@@ -121,7 +100,7 @@ class Loader(object):
                     data[k] = {}
                 data = data[k]
             else:
-                raise TypeError("element in path which is not int or string: {}".format(path))
+                raise TypeError('element in path which is not int or string: {}'.format(path))
 
         try:
             if value == {} and type(data) == dict and type(data.get(path[-1])) == dict:
@@ -199,7 +178,7 @@ class Loader(object):
         else:
             old_scope = self.current_scope
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
-            _set_in(self.data, new_scope.path, {} if brace == '{' else [])
+            self.set_value(scope_key, {} if brace == '{' else [], use_scope=new_scope.is_nested)
             self.stack.append(new_scope)
         self.reset_buffer()
 
