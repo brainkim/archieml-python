@@ -2,47 +2,49 @@ import re
 from StringIO import StringIO
 
 class Scope(object):
-    def __init__(self, key, brace='{', flags='', old_scope=None):
+    def __init__(self, key=None, brace='{', flags='', old_scope=None):
+        assert brace == '{' or brace == '['
         self.brace = brace
 
-        self.is_nested = '.' in flags
+        self.is_nested   = '.' in flags
         self.is_freeform = '+' in flags
 
-        if old_scope is not None and self.is_nested:
-            old_scope.add_key(key)
-
-        if key:
-            key_path = key.split('.')
+        if not key:
+            self.path = []
+        elif self.is_nested and old_scope is not None:
+            self.path = old_scope.resolve_key(key)
         else:
-            key_path = []
+            self.path = key.split('.')
 
         if brace == '[':
-            if self.is_nested and old_scope is not None and old_scope.path:
-                self.path = old_scope.path + [old_scope.index] + key_path
-            else:
-                self.path = key_path
             self.index = 0
-
         else:
-            self.path = key_path
             self.index = None
 
         self.first_key = None
         self.is_simple = False
 
-
     def increment(self):
         assert self.index is not None
         self.index += 1
 
-    def resolve_key(self, key):
-        pass
-
-    def add_key(self, key):
+    def register_key(self, key):
         if self.first_key is None:
             self.first_key = key
         elif self.brace == '[' and self.first_key == key:
             self.increment()
+
+    def resolve_key(self, key):
+        self.register_key(key)
+        if type(key) == int:
+            path = self.path + [key]
+        else:
+            path = key.split('.')
+            if self.brace == '[':
+                path = self.path + [scope.index] + path
+            else:
+                path = self.path + path
+        return path
 
 class Loader(object):
     COMMAND_PATTERN = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(?:\n|\r|$)', re.IGNORECASE)
@@ -56,7 +58,7 @@ class Loader(object):
         self.reset_buffer()
 
         self.stack = []
-        self.stack.append(Scope(key=''))
+        self.stack.append(Scope())
 
         self.is_skipping  = False
         self.done_parsing = False
@@ -70,23 +72,12 @@ class Loader(object):
         return self.stack[-1]
     
     def set_value(self, key, value, use_scope=True):
-        data  = self.data
+        data = self.data
 
         if use_scope:
-            scope = self.current_scope
-            if type(key) == int:
-                path = scope.path + [key]
-            else:
-                path = key.split('.')
-                if scope.brace == '[':
-                    path = scope.path + [scope.index] + path
-                else:
-                    path = scope.path + path
+            path = self.current_scope.resolve_key(key)
         else:
-            if type(key) == int:
-                path = [key]
-            else:
-                path = key.split('.')
+            path = key.split('.')
 
         for k in path[:-1]:
             if type(k) == int:
@@ -160,7 +151,6 @@ class Loader(object):
 
     def load_key(self, key, value):
         scope = self.current_scope
-        scope.add_key(key)
 
         self.set_value(key, value.strip())
         self.reset_buffer(key=key, value=value)
