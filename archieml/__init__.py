@@ -9,7 +9,7 @@ def _set_in(data, path, value):
         if type(k) == int:
             try:
                 data = data[k]
-            except Exception as e:
+            except IndexError:
                 data.append({})
                 data = data[k]
         elif type(k) == str or type(k) == unicode:
@@ -85,8 +85,8 @@ class Loader(object):
         self.is_skipping  = False
         self.done_parsing = False
 
-    def reset_buffer(self, path=None, value=''):
-        self.buffer_path  = path 
+    def reset_buffer(self, key=None, value=''):
+        self.buffer_key   = key
         self.buffer_value = value
 
     @property
@@ -130,8 +130,18 @@ class Loader(object):
         command = command.lower()
         if self.is_skipping and not (command == 'endskip' or command == 'ignore'):
             pass
-        elif command == 'end' and self.buffer_path and self.buffer_value:
-            _set_in(self.data, self.buffer_path, self.buffer_value.strip())
+        elif command == 'end' and self.buffer_key is not None and self.buffer_value:
+            scope = self.current_scope
+            if type(self.buffer_key) == int:
+                path = scope.path + [self.buffer_key]
+            else:
+                path = self.buffer_key.split('.')
+                if scope.brace == '[':
+                    path = scope.path + [scope.index] + path
+                else:
+                    path = scope.path + path
+
+            _set_in(self.data, path, self.buffer_value.strip())
         elif command == 'ignore':
             self.done_parsing = True
         elif command == 'skip':
@@ -150,14 +160,14 @@ class Loader(object):
         path = path + key.split('.')
 
         _set_in(self.data, path, value.strip())
-        self.reset_buffer(path=path, value=value)
+        self.reset_buffer(key=key, value=value)
 
     def load_element(self, value):
         scope = self.current_scope
         scope.is_simple = True
         path = scope.path + [scope.index]
         _set_in(self.data, path, value.strip())
-        self.reset_buffer(path=list(path), value=value)
+        self.reset_buffer(key=scope.index, value=value)
         scope.increment()
 
     def push_scope(self, scope):
@@ -168,7 +178,6 @@ class Loader(object):
             return self.stack.pop()
 
     def load_scope(self, brace, flags, scope_key):
-        self.reset_buffer()
         if scope_key == '':
             self.pop_scope()
         else:
@@ -177,6 +186,7 @@ class Loader(object):
             initial_value = {} if brace == '{' else []
             _set_in(self.data, new_scope.path, initial_value)
             self.push_scope(new_scope)
+        self.reset_buffer()
 
     def load_text(self, text):
         self.buffer_value += re.sub(r'^(\s*)\\', r'\1', text)
