@@ -35,12 +35,12 @@ class Scope(object):
             self.increment()
 
     def resolve_key(self, key):
-        self.register_key(key)
         if type(key) == int:
             path = self.path + [key]
             self.is_simple = True
             self.increment()
         else:
+            self.register_key(key)
             path = key.split('.')
             if self.brace == '[':
                 path = self.path + [scope.index] + path
@@ -153,8 +153,6 @@ class Loader(object):
         self.reset_buffer()
 
     def load_key(self, key, value):
-        scope = self.current_scope
-
         self.set_value(key, value.strip())
         self.reset_buffer(key, value)
 
