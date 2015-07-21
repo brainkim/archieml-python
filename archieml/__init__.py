@@ -65,13 +65,13 @@ class Loader(object):
         self.is_skipping  = False
         self.done_parsing = False
 
-    def reset_buffer(self, key=None, value=''):
-        self.buffer_key   = key
-        self.buffer_value = value
-
     @property
     def current_scope(self):
         return self.stack[-1]
+
+    def reset_buffer(self, key=None, value=''):
+        self.buffer_key   = key
+        self.buffer_value = value
 
     def prepare_data(self, path):
         data = self.data
@@ -115,7 +115,6 @@ class Loader(object):
             except IndexError:
                 data.append(None)
                 data[k] = value
-
 
     def load(self, fp):
         for line in fp:
