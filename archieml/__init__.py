@@ -124,25 +124,23 @@ class Loader(object):
                 break
 
             elif self.COMMAND_PATTERN.match(line):
-                match = self.COMMAND_PATTERN.match(line)
-                self.load_command(match.group('command'))
+                m = self.COMMAND_PATTERN.match(line)
+                self.load_command(m.group('command'))
 
-            elif not self.is_skipping\
-                    and not scope.is_simple\
-                    and self.KEY_PATTERN.match(line):
-                match = self.KEY_PATTERN.match(line)
-                self.load_key(match.group('key'), match.group('value'))
+            elif (not self.is_skipping and not scope.is_simple and
+                    self.KEY_PATTERN.match(line)):
+                m = self.KEY_PATTERN.match(line)
+                self.load_key(m.group('key'), m.group('value'))
 
-            elif not self.is_skipping\
-                    and scope.first_key is None\
-                    and scope.brace == '['\
-                    and self.ELEMENT_PATTERN.match(line):
-                match = self.ELEMENT_PATTERN.match(line)
-                self.load_element(match.group('value'))
+            elif (not self.is_skipping and
+                    scope.first_key is None and scope.brace == '[' and
+                    self.ELEMENT_PATTERN.match(line)):
+                m = self.ELEMENT_PATTERN.match(line)
+                self.load_element(m.group('value'))
 
             elif not self.is_skipping and self.SCOPE_PATTERN.match(line):
-                match = self.SCOPE_PATTERN.match(line)
-                self.load_scope(match.group('brace'), match.group('flags'), match.group('scope_key'))
+                m = self.SCOPE_PATTERN.match(line)
+                self.load_scope(m.group('brace'), m.group('flags'), m.group('scope_key'))
 
             elif not self.is_skipping:
                 self.load_text(line)
