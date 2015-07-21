@@ -24,23 +24,19 @@ class Scope(object):
         self.first_key = None
         self.is_simple = False
 
-    def increment(self):
-        assert self.index is not None
-        self.index += 1
-
     def register_key(self, key):
-        if self.first_key is None:
-            self.first_key = key
-        elif self.brace == '[' and self.first_key == key:
-            self.increment()
+        if self.brace == '[':
+            if self.first_key is None:
+                self.first_key = key
+            elif self.first_key == key:
+                self.index += 1
 
     def resolve_key(self, key):
         if type(key) == int:
             path = self.path + [key]
             self.is_simple = True
-            self.increment()
+            self.index += 1
         else:
-            self.register_key(key)
             path = key.split('.')
             if self.brace == '[':
                 path = self.path + [self.index] + path
@@ -76,7 +72,6 @@ class Loader(object):
     
     def set_value(self, key, value, use_scope=True):
         data = self.data
-
         if use_scope:
             path = self.current_scope.resolve_key(key)
         else:
@@ -108,7 +103,6 @@ class Loader(object):
     def load(self, f, **options):
         for line in f:
             scope = self.current_scope
-
             if self.done_parsing:
                 break
 
@@ -153,6 +147,7 @@ class Loader(object):
         self.reset_buffer()
 
     def load_key(self, key, value):
+        self.current_scope.register_key(key)
         self.set_value(key, value.strip())
         self.reset_buffer(key, value)
 
@@ -167,6 +162,8 @@ class Loader(object):
         else:
             old_scope = self.current_scope
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
+            if new_scope.is_nested:
+                old_scope.register_key(scope_key)
             self.set_value(scope_key, {} if brace == '{' else [], use_scope=new_scope.is_nested)
             self.stack.append(new_scope)
         self.reset_buffer()
