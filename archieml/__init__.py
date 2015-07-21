@@ -132,7 +132,8 @@ class Loader(object):
                 self.load_key(m.group('key'), m.group('value'))
 
             elif (not self.is_skipping and
-                    scope.first_key is None and scope.brace == '[' and
+                    (scope.is_simple or
+                        (scope.first_key is None and scope.brace == '[')) and
                     self.ELEMENT_PATTERN.match(line)):
                 m = self.ELEMENT_PATTERN.match(line)
                 self.load_element(m.group('value'))
