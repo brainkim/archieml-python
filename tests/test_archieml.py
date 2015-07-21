@@ -29,4 +29,6 @@ files = filter(lambda f: 'all.0.aml' not in f and 'freeform' not in f, files)
 
 for filename in files:
     slug, i = os.path.basename(filename).split('.')[:2]
-    setattr(TestArchieML, 'test_{}_{}'.format(slug, i), lambda self: self.check_file(filename))
+    def check_file(filename):
+        return lambda self: self.check_file(filename)
+    setattr(TestArchieML, 'test_{}_{}'.format(slug, i), check_file(filename))
