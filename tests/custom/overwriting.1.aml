@@ -1,0 +1,7 @@
+test: dot-notation keys overwrite array values
+result: {"array": {"not": {"key": "value"}}}
+
+[array]
+key: value
+{array.not}
+key: value

@@ -71,34 +71,45 @@ class Loader(object):
         return self.stack[-1]
     
     def set_value(self, key, value, use_scope=True):
-        data = self.data
         if use_scope:
             path = self.current_scope.get_path(key)
         else:
             path = self.initial_scope.get_path(key)
-
-        for k in path[:-1]:
-            if type(k) == int:
+        data = self.data
+        for i in range(len(path) - 1):
+            k = path[i]
+            j = path[i + 1]
+            if type(data) == list:
                 try:
                     data = data[k]
                 except IndexError:
                     data.append({})
                     data = data[k]
-            elif type(k) == str or type(k) == unicode:
-                if k not in data or type(data[k]) == str:
+            elif type(data) == dict:
+                if k not in data:
                     data[k] = {}
+                else:
+                    try:
+                        data[k][j]
+                    except (KeyError, IndexError):
+                        pass
+                    except TypeError:
+                        data[k] = {}
                 data = data[k]
-            else:
-                raise TypeError('element in path which is not int or string: {}'.format(path))
 
-        try:
-            if value == {} and type(data) == dict and type(data.get(path[-1])) == dict:
+        k = path[-1]
+        if type(data) == dict:
+            if value == {} and type(data.get(k)) == dict:
                 pass
             else:
-                data[path[-1]] = value
-        except IndexError:
-            data.append(None)
-            data[path[-1]] = value
+                data[k] = value
+        elif type(data) == list:
+            try:
+                data[k] = value
+            except IndexError:
+                data.append(None)
+                data[k] = value
+
 
     def load(self, f, **options):
         for line in f:
