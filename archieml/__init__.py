@@ -28,11 +28,14 @@ class Scope(object):
         if self.brace == '[':
             if self.first_key is None:
                 self.first_key = key
+                return False
             elif self.first_key == key:
                 self.index += 1
+                return True
+        return False
 
     def get_path(self, key):
-        if type(key) == int:
+        if isinstance(key, int):
             path = self.path + [key]
             self.is_simple = True
             self.index += 1
@@ -51,7 +54,7 @@ class Loader(object):
     SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[A-Za-z0-9\-_]*(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
 
 
-    def __init__(self, **options):
+    def __init__(self):
         self.data = {}
 
         self.reset_buffer()
@@ -69,41 +72,44 @@ class Loader(object):
     @property
     def current_scope(self):
         return self.stack[-1]
-    
-    def set_value(self, key, value, use_scope=True):
-        if use_scope:
-            path = self.current_scope.get_path(key)
-        else:
-            path = self.initial_scope.get_path(key)
+
+    def prepare_data(self, path):
         data = self.data
-        for i in range(len(path) - 1):
-            k = path[i]
-            j = path[i + 1]
-            if type(data) == list:
+        for i, k in enumerate(path[:-1]):
+            if isinstance(data, list):
                 try:
                     data = data[k]
                 except IndexError:
                     data.append({})
                     data = data[k]
-            elif type(data) == dict:
+            elif isinstance(data, dict):
                 if k not in data:
                     data[k] = {}
                 else:
+                    next_k = path[i+1]
                     try:
-                        data[k][j]
+                        data[k][next_k]
                     except (KeyError, IndexError):
                         pass
                     except TypeError:
                         data[k] = {}
                 data = data[k]
+        return data
 
+    def set_value(self, key, value, use_scope=True):
+        if use_scope:
+            path = self.current_scope.get_path(key)
+        else:
+            path = self.initial_scope.get_path(key)
+
+        data = self.prepare_data(path)
         k = path[-1]
-        if type(data) == dict:
-            if value == {} and type(data.get(k)) == dict:
+        if isinstance(data, dict):
+            if value == {} and isinstance(data.get(k), dict):
                 pass
             else:
                 data[k] = value
-        elif type(data) == list:
+        elif isinstance(data, list):
             try:
                 data[k] = value
             except IndexError:
@@ -111,38 +117,38 @@ class Loader(object):
                 data[k] = value
 
 
-    def load(self, f, **options):
-        for line in f:
+    def load(self, fp):
+        for line in fp:
             scope = self.current_scope
             if self.done_parsing:
                 break
 
             elif self.COMMAND_PATTERN.match(line):
-                m = self.COMMAND_PATTERN.match(line)
-                self.load_command(m.group('command'))
+                match = self.COMMAND_PATTERN.match(line)
+                self.load_command(match.group('command'))
 
             elif not self.is_skipping\
                     and not scope.is_simple\
                     and self.KEY_PATTERN.match(line):
-                m = self.KEY_PATTERN.match(line)
-                self.load_key(m.group('key'), m.group('value'))
+                match = self.KEY_PATTERN.match(line)
+                self.load_key(match.group('key'), match.group('value'))
 
             elif not self.is_skipping\
                     and scope.first_key is None\
                     and scope.brace == '['\
                     and self.ELEMENT_PATTERN.match(line):
-                m = self.ELEMENT_PATTERN.match(line)
-                self.load_element(m.group('value'))
+                match = self.ELEMENT_PATTERN.match(line)
+                self.load_element(match.group('value'))
 
             elif not self.is_skipping and self.SCOPE_PATTERN.match(line):
-                m = self.SCOPE_PATTERN.match(line)
-                self.load_scope(m.group('brace'), m.group('flags'), m.group('scope_key'))
+                match = self.SCOPE_PATTERN.match(line)
+                self.load_scope(match.group('brace'), match.group('flags'), match.group('scope_key'))
 
             elif not self.is_skipping:
                 self.load_text(line)
 
         return self.data
-    
+
     def load_command(self, command):
         command = command.lower()
         if self.is_skipping and not (command == 'endskip' or command == 'ignore'):
@@ -182,8 +188,8 @@ class Loader(object):
     def load_text(self, text):
         self.buffer_value += re.sub(r'^(\s*)\\', r'\1', text)
 
-def load(f):
-    return Loader().load(f)
+def load(fp):
+    return Loader().load(fp)
 
 def loads(aml):
     return Loader().load(StringIO(aml))
