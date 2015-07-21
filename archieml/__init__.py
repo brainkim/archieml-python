@@ -12,7 +12,7 @@ class Scope(object):
         if not key:
             self.path = []
         elif self.is_nested and old_scope is not None:
-            self.path = old_scope.resolve_key(key)
+            self.path = old_scope.get_path(key)
         else:
             self.path = key.split('.')
 
@@ -24,14 +24,14 @@ class Scope(object):
         self.first_key = None
         self.is_simple = False
 
-    def register_key(self, key):
+    def update_index(self, key):
         if self.brace == '[':
             if self.first_key is None:
                 self.first_key = key
             elif self.first_key == key:
                 self.index += 1
 
-    def resolve_key(self, key):
+    def get_path(self, key):
         if type(key) == int:
             path = self.path + [key]
             self.is_simple = True
@@ -73,9 +73,9 @@ class Loader(object):
     def set_value(self, key, value, use_scope=True):
         data = self.data
         if use_scope:
-            path = self.current_scope.resolve_key(key)
+            path = self.current_scope.get_path(key)
         else:
-            path = self.initial_scope.resolve_key(key)
+            path = self.initial_scope.get_path(key)
 
         for k in path[:-1]:
             if type(k) == int:
@@ -147,7 +147,7 @@ class Loader(object):
         self.reset_buffer()
 
     def load_key(self, key, value):
-        self.current_scope.register_key(key)
+        self.current_scope.update_index(key)
         self.set_value(key, value.strip())
         self.reset_buffer(key, value)
 
@@ -163,7 +163,7 @@ class Loader(object):
             old_scope = self.current_scope
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             if new_scope.is_nested:
-                old_scope.register_key(scope_key)
+                old_scope.update_index(scope_key)
             self.set_value(scope_key, {} if brace == '{' else [], use_scope=new_scope.is_nested)
             self.stack.append(new_scope)
         self.reset_buffer()
