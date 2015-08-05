@@ -1,5 +1,8 @@
 import re
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 class Scope(object):
     def __init__(self, key=None, brace='{', flags='', old_scope=None):
