@@ -25,7 +25,7 @@ class TestArchieML(unittest.TestCase):
 
 testdir = os.path.dirname(os.path.realpath(__file__))
 files = glob.glob(testdir + '/archieml.org/test/1.0/*.aml')
-files = filter(lambda f: 'all.0.aml' not in f and 'freeform' not in f, files)
+files = [f for f in files if 'all.0.aml' not in f and 'freeform' not in f]
 files = files + glob.glob(testdir + '/custom/*.aml')
 
 for filename in files:
