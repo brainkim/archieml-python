@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 try:
     from StringIO import StringIO
 except ImportError:
@@ -58,7 +59,7 @@ class Loader(object):
 
 
     def __init__(self):
-        self.data = {}
+        self.data = OrderedDict()
 
         self.reset_buffer()
 
@@ -83,11 +84,11 @@ class Loader(object):
                 try:
                     data = data[k]
                 except IndexError:
-                    data.append({})
+                    data.append(OrderedDict())
                     data = data[k]
             elif isinstance(data, dict):
                 if k not in data:
-                    data[k] = {}
+                    data[k] = OrderedDict()
                 else:
                     next_k = path[i+1]
                     try:
@@ -95,7 +96,7 @@ class Loader(object):
                     except (KeyError, IndexError):
                         pass
                     except TypeError:
-                        data[k] = {}
+                        data[k] = OrderedDict()
                 data = data[k]
         return data
 
@@ -108,7 +109,7 @@ class Loader(object):
         data = self.prepare_data(path)
         k = path[-1]
         if isinstance(data, dict):
-            if value == {} and isinstance(data.get(k), dict):
+            if value == OrderedDict() and isinstance(data.get(k), dict):
                 pass
             else:
                 data[k] = value
@@ -182,7 +183,7 @@ class Loader(object):
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             if new_scope.is_nested:
                 old_scope.update_index(scope_key)
-            self.set_value(scope_key, {} if brace == '{' else [], use_scope=new_scope.is_nested)
+            self.set_value(scope_key, OrderedDict() if brace == '{' else [], use_scope=new_scope.is_nested)
             self.stack.append(new_scope)
         self.reset_buffer()
 
