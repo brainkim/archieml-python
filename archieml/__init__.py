@@ -56,6 +56,7 @@ class Loader(object):
     KEY_PATTERN     = re.compile(r'^\s*(?P<key>[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[A-Za-z0-9\-_]*(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
+    NOT_WS_PATTERN = re.compile(r'[^\n\r\s]')
 
 
     def __init__(self):
@@ -188,7 +189,14 @@ class Loader(object):
         self.reset_buffer()
 
     def load_text(self, text):
-        self.buffer_value += re.sub(r'^(\s*)\\', r'\1', text)
+        if self.current_scope.is_freeform and self.NOT_WS_PATTERN.match(text):
+            path = self.current_scope.path
+            data = self.prepare_data(path)
+            data[path[-1]].append(OrderedDict([
+                ('type', 'text'), ('value', text.strip())
+            ]))
+        else:
+            self.buffer_value += re.sub(r'^(\s*)\\', r'\1', text)
 
 def load(fp):
     return Loader().load(fp)
