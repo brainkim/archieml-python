@@ -17,6 +17,8 @@ class Scope(object):
             self.path = []
         elif self.is_nested and old_scope is not None:
             self.path = old_scope.get_path(key)
+            if old_scope.is_freeform:
+                self.path[-1] = 'value'
         else:
             self.path = key.split('.')
 
@@ -41,7 +43,7 @@ class Scope(object):
     def get_path(self, key):
         if isinstance(key, int):
             path = self.path + [key]
-            self.is_simple = True
+            self.is_simple = (not self.is_freeform)
             self.index += 1
         else:
             path = key.split('.')
@@ -56,7 +58,7 @@ class Loader(object):
     KEY_PATTERN     = re.compile(r'^\s*(?P<key>[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[A-Za-z0-9\-_]*(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
-    NOT_WS_PATTERN = re.compile(r'[^\n\r\s]')
+    NOT_WS_PATTERN  = re.compile(r'[^\n\r\s]')
 
 
     def __init__(self):
@@ -167,8 +169,15 @@ class Loader(object):
         self.reset_buffer()
 
     def load_key(self, key, value):
-        self.current_scope.update_index(key)
-        self.set_value(key, value.strip())
+        if self.current_scope.is_freeform and self.NOT_WS_PATTERN.match(value):
+            self.set_value(
+                self.current_scope.index, OrderedDict([
+                    ('type', key), ('value', value.strip())
+                ])
+            )
+        else:
+            self.current_scope.update_index(key)
+            self.set_value(key, value.strip())
         self.reset_buffer(key, value)
 
     def load_element(self, value):
@@ -184,17 +193,29 @@ class Loader(object):
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             if new_scope.is_nested:
                 old_scope.update_index(scope_key)
-            self.set_value(scope_key, OrderedDict() if brace == '{' else [], use_scope=new_scope.is_nested)
+            if old_scope.is_freeform:
+                self.set_value(
+                    old_scope.index, OrderedDict([
+                        ('type', scope_key),
+                        ('value',  OrderedDict() if brace == '{' else [])
+                    ])
+                )
+            else:
+                self.set_value(
+                  scope_key, OrderedDict() if brace == '{' else [],
+                  use_scope=new_scope.is_nested
+                )
             self.stack.append(new_scope)
         self.reset_buffer()
 
     def load_text(self, text):
-        if self.current_scope.is_freeform and self.NOT_WS_PATTERN.match(text):
-            path = self.current_scope.path
-            data = self.prepare_data(path)
-            data[path[-1]].append(OrderedDict([
-                ('type', 'text'), ('value', text.strip())
-            ]))
+        if self.current_scope.is_freeform and \
+           self.NOT_WS_PATTERN.match(text.strip()):
+            self.set_value(
+                self.current_scope.index, OrderedDict([
+                    ('type', 'text'), ('value', text.strip())
+                ])
+            )
         else:
             self.buffer_value += re.sub(r'^(\s*)\\', r'\1', text)
 
