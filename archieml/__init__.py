@@ -193,7 +193,7 @@ class Loader(object):
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             if new_scope.is_nested:
                 old_scope.update_index(scope_key)
-            if old_scope.is_freeform:
+            if old_scope.is_freeform and new_scope.is_nested:
                 self.set_value(
                     old_scope.index, OrderedDict([
                         ('type', scope_key),
