@@ -4,7 +4,7 @@ Parse Archie Markup Language (ArchieML) documents into Python data structures.
 
 Read about the ArchieML specification at [archieml.org](http://archieml.org).
 
-The current version is `v0.1.1`.
+The current version is `v0.2.0`.
 
 ## Installation
 
