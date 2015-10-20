@@ -58,7 +58,6 @@ class Loader(object):
     KEY_PATTERN     = re.compile(r'^\s*(?P<key>[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[A-Za-z0-9\-_]*(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
-    NOT_WS_PATTERN  = re.compile(r'[^\n\r\s]')
 
 
     def __init__(self):
@@ -169,7 +168,7 @@ class Loader(object):
         self.reset_buffer()
 
     def load_key(self, key, value):
-        if self.current_scope.is_freeform and self.NOT_WS_PATTERN.match(value):
+        if self.current_scope.is_freeform:
             self.set_value(
                 self.current_scope.index, OrderedDict([
                     ('type', key), ('value', value.strip())
@@ -209,8 +208,7 @@ class Loader(object):
         self.reset_buffer()
 
     def load_text(self, text):
-        if self.current_scope.is_freeform and \
-           self.NOT_WS_PATTERN.match(text.strip()):
+        if self.current_scope.is_freeform and text.strip():
             self.set_value(
                 self.current_scope.index, OrderedDict([
                     ('type', 'text'), ('value', text.strip())
