@@ -13,7 +13,7 @@ The current version is `v0.3.0`.
 
 ## Usage
 
-```
+```python
 import archieml
 
 # use archieml.load to load data from a file
@@ -22,9 +22,13 @@ with open('a.aml') as f:
 
 # or use archieml.loads to load data from a string
 
-data = archieml.loads("""key: value
+data = archieml.loads("""
+
+key: value
 [array]
 * 1
 * 2
-* 3""")
+* 3
+
+""")
 ```
