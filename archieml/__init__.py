@@ -55,9 +55,9 @@ class Scope(object):
 
 class Loader(object):
     COMMAND_PATTERN = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(?:\n|\r|$)', re.IGNORECASE)
-    KEY_PATTERN     = re.compile(r'^\s*(?P<key>[\w-]+(?:\.[\w-]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
+    KEY_PATTERN     = re.compile(r'^\s*(?P<key>[\w-]+(?:\.[\w-]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))', re.UNICODE)
     ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
-    SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[\w-]*(?:\.[\w-]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
+    SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[\w-]*(?:\.[\w-]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)', re.UNICODE)
 
 
     def __init__(self):
@@ -124,6 +124,10 @@ class Loader(object):
 
     def load(self, fp):
         for line in fp:
+            if hasattr(line, 'decode'):
+                # This is a byte string, decode it
+                line = line.decode('utf-8')
+
             scope = self.current_scope
             if self.done_parsing:
                 break

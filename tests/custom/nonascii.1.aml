@@ -1,0 +1,5 @@
+test: non-ASCII characters work as keys
+result: {"question": "Pourquoi ?", "réponse": "Parce que."}
+
+question: Pourquoi ?
+réponse: Parce que.
