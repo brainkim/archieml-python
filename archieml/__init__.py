@@ -55,9 +55,9 @@ class Scope(object):
 
 class Loader(object):
     COMMAND_PATTERN = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(?:\n|\r|$)', re.IGNORECASE)
-    KEY_PATTERN     = re.compile(r'^\s*(?P<key>[A-Za-z0-9\-_]+(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
+    KEY_PATTERN     = re.compile(r'^\s*(?P<key>[\w-]+(?:\.[\w-]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))')
     ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
-    SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[A-Za-z0-9\-_]*(?:\.[A-Za-z0-9\-_]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
+    SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[\w-]*(?:\.[\w-]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)')
 
 
     def __init__(self):
