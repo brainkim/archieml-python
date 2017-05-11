@@ -126,7 +126,7 @@ class Loader(object):
         for line in fp:
             if hasattr(line, 'decode'):
                 # This is a byte string, decode it
-                line = line.decode('utf-8')
+                line = line.decode('utf-8-sig')
 
             scope = self.current_scope
             if self.done_parsing:
