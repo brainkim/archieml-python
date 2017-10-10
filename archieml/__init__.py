@@ -124,7 +124,7 @@ class Loader(object):
 
     def load(self, fp):
         for line in fp:
-            if hasattr(line, 'decode'):
+            if hasattr(line, 'decode') and not isinstance(line, unicode):
                 # This is a byte string, decode it
                 line = line.decode('utf-8-sig')
 
