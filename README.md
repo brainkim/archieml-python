@@ -6,7 +6,7 @@ Read about the ArchieML specification at [archieml.org](http://archieml.org).
 
 <!-- I wonder if this will help help SEO (`v0.1.0`, was being distributed instead) -->
 ## Installation [(with pip)](https://pypi.python.org/pypi/archieml/0.3.0)
-The current version is `==0.3.2` (hopefully, you never know).
+The current version is `==0.3.3` (hopefully, you never know).
 
 `pip install archieml` 
 

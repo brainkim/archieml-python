@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='archieml',
-    version='0.3.2',
+    version='0.3.3',
     description='Python parser for the Archie Markup Language (ArchieML)',
     author='Brian Kim',
     author_email='briankimpossible@gmail.com',
