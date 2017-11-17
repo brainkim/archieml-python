@@ -199,19 +199,27 @@ class Loader(object):
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             if new_scope.is_nested:
                 old_scope.update_index(scope_key)
+
             if old_scope.is_freeform and new_scope.is_nested:
                 self.set_value(
-                    old_scope.index, OrderedDict([
+                    old_scope.index,
+                    OrderedDict([
                         ('type', scope_key),
                         ('value',  OrderedDict() if brace == '{' else [])
                     ])
                 )
             else:
                 self.set_value(
-                  scope_key, OrderedDict() if brace == '{' else [],
-                  use_scope=new_scope.is_nested
+                    scope_key,
+                    OrderedDict() if brace == '{' else [],
+                    use_scope=new_scope.is_nested
                 )
-            self.stack.append(new_scope)
+
+            # See: https://github.com/newsdev/archieml-js/issues/17
+            if len(self.stack) > 1 and not new_scope.is_nested:
+                self.stack[-1] = new_scope
+            else:
+                self.stack.append(new_scope)
         self.reset_buffer()
 
     def load_text(self, text):
