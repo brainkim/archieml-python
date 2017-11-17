@@ -46,7 +46,10 @@ class Scope(object):
             self.is_simple = (not self.is_freeform)
             self.index += 1
         else:
-            path = key.split('.')
+            if not self.is_freeform:
+                path = key.split('.')
+            else:
+                path = [key]
             if self.brace == '[':
                 path = self.path + [self.index] + path
             else:
@@ -143,7 +146,7 @@ class Loader(object):
 
             elif (not self.is_skipping and
                     (scope.is_simple or
-                        (scope.first_key is None and scope.brace == '[')) and
+                        (scope.first_key is None and scope.brace == '[' and not scope.is_freeform)) and
                     self.ELEMENT_PATTERN.match(line)):
                 m = self.ELEMENT_PATTERN.match(line)
                 self.load_element(m.group('value'))
