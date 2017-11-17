@@ -46,7 +46,10 @@ class Scope(object):
             self.is_simple = (not self.is_freeform)
             self.index += 1
         else:
-            path = key.split('.')
+            if not self.is_freeform:
+                path = key.split('.')
+            else:
+                path = [key]
             if self.brace == '[':
                 path = self.path + [self.index] + path
             else:
@@ -54,11 +57,14 @@ class Scope(object):
         return path
 
 class Loader(object):
-    COMMAND_PATTERN = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(?:\n|\r|$)', re.IGNORECASE)
-    KEY_PATTERN     = re.compile(r'^\s*(?P<key>[\w-]+(?:\.[\w-]+)*)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))', re.UNICODE)
-    ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
-    SCOPE_PATTERN   = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[\w-]*(?:\.[\w-]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)', re.UNICODE)
+    WHITESPACE = u'\u0000\u0009\u000A\u000B\u000C\u000D\u0020\u00A0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000\uFEFF'
 
+    # blacklist characters: "[\]{}:"
+    SLUG_BLACKLIST = WHITESPACE + u'\u005B\u005C\u005D\u007B\u007D\u003A'
+    KEY_PATTERN = re.compile(r'^\s*(?P<key>[^' + SLUG_BLACKLIST + r']+)[ \t\r]*:[ \t\r]*(?P<value>.*(?:\n|\r|$))', re.UNICODE)
+    COMMAND_PATTERN = re.compile(r'^\s*:[ \t\r]*(?P<command>endskip|ignore|skip|end).*?(?:\n|\r|$)', re.IGNORECASE)
+    ELEMENT_PATTERN = re.compile(r'^\s*\*[ \t\r]*(?P<value>.*(?:\n|\r|$))')
+    SCOPE_PATTERN = re.compile(r'^\s*(?P<brace>\[|\{)[ \t\r]*(?P<flags>[\+\.]{0,2})(?P<scope_key>[^' + SLUG_BLACKLIST + r']*(?:\.[\w-]+)*)[ \t\r]*(?:\]|\}).*?(?:\n|\r|$)', re.UNICODE)
 
     def __init__(self):
         self.data = OrderedDict()
@@ -129,29 +135,27 @@ class Loader(object):
                 line = line.decode('utf-8-sig')
 
             scope = self.current_scope
+
             if self.done_parsing:
                 break
-
+            elif line[0] == '\\':
+                self.load_text(line)
             elif self.COMMAND_PATTERN.match(line):
                 m = self.COMMAND_PATTERN.match(line)
                 self.load_command(m.group('command'))
-
             elif (not self.is_skipping and not scope.is_simple and
                     self.KEY_PATTERN.match(line)):
                 m = self.KEY_PATTERN.match(line)
                 self.load_key(m.group('key'), m.group('value'))
-
             elif (not self.is_skipping and
                     (scope.is_simple or
-                        (scope.first_key is None and scope.brace == '[')) and
+                        (scope.first_key is None and scope.brace == '[' and not scope.is_freeform)) and
                     self.ELEMENT_PATTERN.match(line)):
                 m = self.ELEMENT_PATTERN.match(line)
                 self.load_element(m.group('value'))
-
             elif not self.is_skipping and self.SCOPE_PATTERN.match(line):
                 m = self.SCOPE_PATTERN.match(line)
                 self.load_scope(m.group('brace'), m.group('flags'), m.group('scope_key'))
-
             elif not self.is_skipping:
                 self.load_text(line)
 
@@ -196,19 +200,27 @@ class Loader(object):
             new_scope = Scope(scope_key, brace=brace, flags=flags, old_scope=old_scope)
             if new_scope.is_nested:
                 old_scope.update_index(scope_key)
+
             if old_scope.is_freeform and new_scope.is_nested:
                 self.set_value(
-                    old_scope.index, OrderedDict([
+                    old_scope.index,
+                    OrderedDict([
                         ('type', scope_key),
                         ('value',  OrderedDict() if brace == '{' else [])
                     ])
                 )
             else:
                 self.set_value(
-                  scope_key, OrderedDict() if brace == '{' else [],
-                  use_scope=new_scope.is_nested
+                    scope_key,
+                    OrderedDict() if brace == '{' else [],
+                    use_scope=new_scope.is_nested
                 )
-            self.stack.append(new_scope)
+
+            # See: https://github.com/newsdev/archieml-js/issues/17
+            if len(self.stack) > 1 and not new_scope.is_nested:
+                self.stack[-1] = new_scope
+            else:
+                self.stack.append(new_scope)
         self.reset_buffer()
 
     def load_text(self, text):

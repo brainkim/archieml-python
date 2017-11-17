@@ -21,10 +21,12 @@ class TestArchieML(unittest.TestCase):
             '{}\n'
             'expected: {}\n'
             'actual  : {}'
-        ).format(test, expected, actual))
+        ).format(test, expected, json.loads(json.dumps(actual))))
 
 testdir = os.path.dirname(os.path.realpath(__file__))
 files = glob.glob(testdir + '/archieml.org/test/1.0/*.aml')
+# https://github.com/newsdev/archieml.org/issues/36
+files = [f for f in files if 'multi_line.16.aml' not in f]
 files = [f for f in files if 'all.0.aml' not in f]
 files = files + glob.glob(testdir + '/custom/*.aml')
 

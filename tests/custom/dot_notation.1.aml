@@ -1,8 +1,0 @@
-test: dot-notation keys with empty segments are ignored
-result: {}
-
-...: value
-. .: value
-key.: value
-key..key: value
-.key: value
