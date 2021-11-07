@@ -125,8 +125,7 @@ class Loader(object):
             try:
                 data[k] = value
             except IndexError:
-                data.append(None)
-                data[k] = value
+                data.append(value)
 
     def load(self, fp):
         for line in fp:
