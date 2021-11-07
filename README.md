@@ -8,7 +8,7 @@ Read about the ArchieML specification at [archieml.org](http://archieml.org).
 ## Installation [(with pip)](https://pypi.python.org/pypi/archieml/0.3.4)
 The current version is `==0.3.4` (hopefully, you never know).
 
-`pip install archieml` 
+`pip install archieml`
 
 ## Usage
 
@@ -30,4 +30,18 @@ key: value
 * 3
 
 """)
+```
+
+## Contributing
+
+We pull test fixtures from the ArchieML repository (https://github.com/newsdev/archieml.org). This is done using git submodules for some reason. Run the following command to pull the repository.
+
+```shell
+git submodule update --init
+```
+
+Then, run the following command to run unit tests.
+
+```shell
+./setup.py test
 ```
