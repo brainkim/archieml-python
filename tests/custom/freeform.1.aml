@@ -1,0 +1,11 @@
+test: freeform arrays
+result: {"freeform": [{"type": "obj", "value": {"key": "hello"}}, {"type": "obj", "value": {"key": "world"}}]}
+
+[.+freeform]
+  {.obj}
+    key: hello
+  {}
+  {.obj}
+    key: world
+  {}
+[]
