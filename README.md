@@ -45,3 +45,11 @@ Then, run the following command to run unit tests.
 ```shell
 ./setup.py test
 ```
+
+Publishing can be done using [twine](https://pypi.org/project/twine/).
+
+```shell
+./setup.py sdist
+
+twine dist/*.gz
+```
