@@ -2,16 +2,16 @@
   attr1: a
   attr2: b
   [.+level2]
-  {.obj_type}
-    attr1: a
-    attr2: b
-  {}
+    {.obj_type}
+      attr1: a
+      attr2: b
+    {}
 
-  Lorem ipsum do do do.
+    Lorem ipsum do do do.
 
-   {.obj_type}
-    attr1: a
-    attr2: b
-  {}
+    {.obj_type}
+      attr1: a
+      attr2: b
+    {}
   []
 []
